@@ -1,0 +1,21 @@
+{
+    "version":  "1.1.0",
+    "origin_scripts":  {
+                           "convert_inper.py":  "c1467681c678fb0c265f74a9730be09e1d767797aa8a805e13158bd46b22c30b",
+                           "match_sample_format.py":  "61363b33b7346e9a08f7ffb998d2efde9e4e6f9d01e914c1ffd627c6e0f7ee00"
+                       },
+    "changes":  [
+                    "Configurable input/output; no fixed 36/18 counts",
+                    "One-step primary plus full detail export",
+                    "Variable ROI count with explicit Camera/410/470 schema validation",
+                    "Source event retention",
+                    "Tkinter desktop interface and portable Windows executable",
+                    "Existing Analyzer metadata compatibility"
+                ],
+    "no_vendor_binaries_or_experimental_data_in_package":  true,
+    "vendor_gui_comparison_performed":  false,
+    "ParentVersion":  "1.0.0",
+    "ExportAlgorithmUnchanged":  true,
+    "IconApprovalPending":  false,
+    "IconSource":  "Owner-provided selected PNG; assets/ICON_SOURCE.json"
+}

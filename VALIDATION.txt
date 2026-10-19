@@ -1,0 +1,52 @@
+V1.1 / 1.1.0 RELEASE VALIDATION — owner-selected icon
+Date: 2026-10-19
+
+V1.1 checks: 11 synthetic core/GUI tests PASS; built Windows EXE reports file/product version 1.1.0.
+EXE contains both icon/group-icon resources, and the window loads the bundled icon.
+PNG transparency preserved; ICO contains 16/24/32/48/64/128/256 px; light/dark previews inspected.
+Packaged EXE completed synthetic scan/export and video byte-copy with Python excluded from PATH.
+Export algorithm is unchanged except VERSION; no new real-data conversion or analysis was run.
+Known Windows path-length/nested-category naming limits remain; use a short new output root.
+The original V1.0 code and EXE remain unchanged; only review assets were added to its assets directory.
+
+Historical V1.0 export validation (algorithm unchanged):
+Inper Batch CSV Exporter 1.0.0 — validation record
+Date: 2026-10-17
+
+Synthetic core + GUI tests: 11 tests PASS.
+- Sample CSV header, UTF-8 BOM, CRLF, trailing empty column.
+- Independent nanosecond times, float64 bit roundtrip including negative zero.
+- Unequal sample lengths, blanks and all tails retained; three ROIs supported.
+- Nonempty source event tables and BLOB data retained.
+- Multiple recordings for one animal receive distinct paths.
+- Read-only scan, source hashes unchanged, existing output refused.
+- Missing database/video, active WAL, unsupported wavelength, invalid timestamps and NaN rejected.
+- GUI worker scans/exports, completion/error handling and controls re-enabled.
+
+Real-data regression: 36 previously verified Encoding/Retrieval records PASS.
+- 36 new primary CSV files byte-identical to the prior sample-format exports.
+- 36 new detailed CSV files byte-identical to the prior complete detailed exports.
+- 1,061,202 original signal values verified against Base64 IEEE754 float64 bytes.
+- 36 empty directories skipped.
+- 7 extra 470 samples (14 ROI values) preserved in details; 8 missing 470 tail rows blank.
+- 145 reference/source files (36 each primary/detail/video/database plus user sample) unchanged.
+- Original video hashes match. Regression used video references to avoid duplicate large videos;
+  video-copy execution was separately tested with synthetic files, not 36 new real-video copies.
+- No experimental project.mat, annotations or prior conversion scripts were edited.
+- Existing MATLAB Analyzer read_recording tested on two real records with opposite tail imbalances:
+  metadata selected the detailed CSV, both ROIs and both wavelength sample counts/times were preserved.
+
+Packaged executable:
+- See packaged_self_test.json. A targeted-window preview was inspected locally and is not distributed.
+- Synthetic GUI scan/export, sqlite3 and AVI byte-copy checks executed inside the built EXE.
+- Test PATH excluded Python; normal process exit checked.
+- This is a smoke test on the current Windows machine, not testing on a separate clean PC.
+
+Method and scope:
+- Decoder extracted from prior scripts convert_inper.py and match_sample_format.py.
+- Prior decoder was checked against local vendor LabDataReader code; this release does not bundle
+  or re-open that DLL, and did not compare against a newly run vendor GUI export.
+- No interpolation, dF/F, filtering, video synchronization, biology inference or group analysis.
+- Generalization to future Inper schemas is deliberately bounded: unsupported schemas fail.
+- This package contains no real experimental data. Private regression outputs remain outside the ZIP.
+- GitHub was not synchronized.

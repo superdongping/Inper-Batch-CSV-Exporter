@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "synthetic_only": true,
+  "gui_scan": true,
+  "gui_export": true,
+  "video_copy_verified": true,
+  "sqlite_available": true,
+  "independent_python_install_required": false
+}

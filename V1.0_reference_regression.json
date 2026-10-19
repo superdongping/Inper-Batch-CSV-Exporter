@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "records": 36,
+  "primary_csv_byte_identical": true,
+  "detailed_csv_byte_identical": true,
+  "reference_and_source_hashes_unchanged": 145,
+  "copied_real_videos": false,
+  "video_hashes_match": true
+}

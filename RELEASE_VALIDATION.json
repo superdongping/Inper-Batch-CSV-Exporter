@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "version": "1.1.0",
+  "selected_icon": "Owner-provided PNG, unchanged",
+  "source_png_sha256": "27b113608b9655564e1a5562f0cd0dea6955c161c6d5f71f2b62269052204467",
+  "ico_sizes": [
+    16,
+    24,
+    32,
+    48,
+    64,
+    128,
+    256
+  ],
+  "original_v1_files_unchanged": 22,
+  "export_algorithm_unchanged_except_version": true,
+  "synthetic_tests_passed": 11,
+  "packaged_gui_scan_export_video_copy": "PASS",
+  "windows_icon_resources": true,
+  "windows_file_product_version": "1.1.0",
+  "no_experimental_data_bundled": true
+}

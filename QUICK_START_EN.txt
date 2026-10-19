@@ -1,0 +1,29 @@
+Inper Batch CSV Exporter V1.1 — Quick start
+
+1. Finish acquisition and close software writing to the input data.
+2. Extract this entire folder and double-click Inper Batch CSV Exporter.exe.
+   Windows 64-bit; no separate Python, MATLAB or vendor DLL is required.
+3. Add one or more batch folders containing animal/recording/data.db and one AVI per recording.
+4. Choose an output parent, then enter a NEW final folder name. Existing output folders are refused.
+5. Leave Copy original AVI videos checked, unless you intentionally want references to original videos.
+6. Scan to preview. It is read-only and writes no output. Resolve errors before exporting.
+7. Export and wait for COMPLETE. Confirm validation_summary.json says status PASS.
+
+Primary CSV: sample-compatible Time,ROI-1_sig_410,ROI-1_sig_470,... plus an empty final column.
+Time comes from 410 nm only, truncated to 100 ns ticks, formatted d:hh:mm:ss.fffffff.
+Signals are paired by sample index. They are not interpolated or synchronized to video automatically.
+_details retains all samples and independent 410/470 nanosecond timestamps, including unmatched tails.
+Missing samples are blank, never zero. Raw float64 values are not rounded for display.
+Metadata retains all nonsignal tables; nonempty source event tables are also exported separately.
+Source event tables are not automatically interpreted as Analyzer behavior annotations.
+
+Outputs preserve batch and animal directories. Multiple recordings for one animal retain recording
+subdirectories and unique filenames. Empty folders are listed, not removed.
+Every CSV is read back and checked, detailed signals are verified against original float64 bytes,
+copied video hashes must match, and source files are hashed before/after conversion.
+Do not use incomplete output: final PASS is required. Failed exports need a different NEW output folder.
+
+Supported: the validated Inper SQLite Camera schema, ROI-1...ROI-N, both 410 and 470 nm per ROI.
+Other schemas/channels fail explicitly. No filtering, dF/F, group assignment or behavior inference.
+This is an independent read-only decoder; no vendor GUI export comparison was performed for this release.
+See INSTRUCTION_zh-CN.txt for full details and AGENT_WORKFLOW.txt for a reusable assistant instruction.

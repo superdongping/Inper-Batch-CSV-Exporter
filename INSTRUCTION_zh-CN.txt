@@ -1,0 +1,145 @@
+Inper 原始数据批量整理与 CSV 导出 instruction
+版本：1.1.0；适用 Windows 64-bit
+
+一、准备新批次
+
+停止采集并关闭正在写入该批次的 Inper 软件。不要在录制过程中转换。
+保留原始数据，不移动、重命名、清理或修改源文件。
+输入目录应类似：
+
+  2026-10-13 实验内容 Encoding/
+    01 #16/
+      20261013112700/          空目录，软件开始记录前自动生成
+      20261013112751/
+        data.db
+        xxxx.avi
+    02 #17/
+      ...
+
+每个有效记录目录应有一个 data.db 和恰好一个 AVI。
+动物数、批次数及 ROI 数不写死。每个 ROI 需同时具有 410/470 nm Camera 信号，
+配置名称须为 ROI-1、ROI-2 等，程序从 ChannelConfig 读取对应关系。
+程序不根据目录名推断动物分组、脑区名称或行为学定义。
+Encoding 与 Retrieval 可在同一次导出选择，但保留独立批次目录。
+
+二、窗口操作
+
+1. 双击 Inper Batch CSV Exporter.exe。
+   可把整个程序文件夹复制到其他电脑。EXE 不依赖 Python 或 MATLAB。
+2. 点击 Add batch，选择包含各动物目录的“批次”文件夹。
+   多个批次逐个添加；Remove selected 可删除选中的输入项。
+   不能同时选择互相包含的目录，两个批次的目录名也不能相同。
+3. 点击 Choose parent 选输出父目录，再在输入栏修改新输出目录名。
+   例如父目录为 G:\Photometry_Output，输入路径可设为：
+   G:\Photometry_Output\2026-11-01_Inper_Export
+   最后一级目录必须尚不存在。不要先在资源管理器里创建它。
+   输出与任何输入目录都不能互相包含。
+4. 默认勾选 Copy original AVI videos：原视频原样复制并校验 SHA256。
+   取消勾选时不复制视频，清单记录原视频绝对路径；分析时须保持原路径可访问。
+5. 点击 Scan / preview。扫描只读，不创建任何输出。
+   检查预览中的批次、动物、记录及输出相对目录。
+   410/470 数量不一致会列出 warning；所有样本仍会进入详细 CSV。
+6. 点击 Export。导出前会重新检查，不直接信任上一次扫描。
+   程序会校验数据库、逐值复读 CSV、比对 float64 原始字节、核对复制视频，
+   并在记录转换前后比较源目录文件 SHA256。
+   视频校验会读取较多磁盘数据，运行时间可能比只写 CSV 长。
+7. 等待 COMPLETE，点击 Open output 查看结果。
+   运行中请勿强制关闭程序；窗口会阻止普通关闭以避免半成品。
+
+三、输出结构与命名
+
+  新输出目录/
+    原批次名/
+      原动物目录名/
+        日期_实验内容_顺序_动物编号(Camera).csv
+        日期_实验内容_顺序_动物编号.avi
+        日期_实验内容_顺序_动物编号_metadata.json
+        原动物目录内的 .txt 备注
+        ..._source_Tag.csv      仅源事件表非空时存在
+    _details/
+      原批次名/原动物目录名/..._detailed.csv
+    conversion_manifest.csv
+    skipped_empty_folders.csv
+    validation_summary.json
+    OUTPUT_README.txt
+
+示例：
+2026-10-13_stHFD CCK-Cre shPKM2 NPR E_01_#16(Camera).csv
+
+日期和实验内容来自批次目录，顺序及编号来自动物目录，不额外猜测日期或编号。
+一个动物若有多份有效记录，输出会保留其记录子目录并在文件名追加记录子路径，
+从而不会把第二份记录覆盖到第一份。全部有效记录都导出，不自动选“最后一次”。
+空目录跳过且列入 skipped_empty_folders.csv；非空记录目录缺数据库或缺视频会报错。
+清单内派生文件采用相对于输出根目录的路径，便于移动整个输出文件夹。
+metadata 的源路径和视频引用模式仍是绝对路径。
+metadata 的 detailed_csv 使用绝对路径，兼容现有 Analyzer 自动读取详细时间的方式。
+导出后尽量保持输出目录路径不变；若移动输出目录，需要同步修正 metadata 的
+detailed_csv 指向。未修正时旧版 Analyzer 可能回退到主表共享时间，影响精确分析。
+metadata 同时提供相对路径及详细 CSV 哈希，供维护者安全重定位核对。
+
+四、两种 CSV 的时间与信号含义
+
+主 CSV（两 ROI 示例）：
+Time,ROI-1_sig_410,ROI-1_sig_470,ROI-2_sig_410,ROI-2_sig_470,
+
+- UTF-8 BOM、CRLF 换行、末尾空列与已核对样品保持一致。
+- Time 使用 410 nm CameraTime，格式 d:hh:mm:ss.fffffff。
+- 纳秒整数除以 100 截断为 100 ns ticks；不是通常的十进制秒字符串。
+- 主表行数等于 410 样本数；410 和 470 按各自样本序号排列，不做插值。
+- 410/470 是交替采样，主表 Time 不能当作 470 的真实采样时刻。
+- 470 较短时尾部对应信号留空，空白不是零。
+- 470 较长时额外尾部样本只存在详细 CSV，不会丢弃。
+- 信号保持原始双精度值，不为了显示位数额外舍入。
+
+详细 CSV：
+- 行数取两个波长样本数的最大值。
+- 保留 Time_410_s、Time_470_s、CameraTime_410_ns、CameraTime_470_ns，
+  以及各波长 CreateTime、RecordId 和所有 ROI 原始信号。
+- 不存在的波长样本整组字段留空。
+- 需要精确时间分析时优先使用详细表的独立时间，不能删除 _details。
+
+五、事件、备注和视频
+
+metadata.json 保留所有非信号数据库表及数据库 schema。
+Marker、OutputMarker、Tag、Note、Tracking、ZoneInfo、IntervalScale 中的非空表
+另生成带原表名的 CSV，保持原始字段含义，不推断哪一列是行为 onset。
+二进制字段在 metadata 中以 {"__blob_base64__":"..."} 无损保留。
+源事件不自动变成 Behavior Analyzer 里的人工行为标签；需另行确认映射。
+仅复制动物目录直接包含的 .txt 备注；其他附加文件不自动复制，但源文件保留。
+视频不裁切、不转码。导出不等于同步校准；视频偏移仍需在分析软件人工确认。
+
+六、验收标准
+
+仅当 validation_summary.json 的 status 为 PASS 且没有 FAILED.json 时使用输出。
+核对：
+1. records 与你预期的有效记录数一致；跳过的目录都确实为空。
+2. conversion_manifest.csv 每行 validation 为 PASS，路径及样本数合理。
+3. 每份主表和详细表均在写出后重新读取并逐行核对。
+4. 详细表全部 ROI 信号与原 Base64 的 IEEE754 float64 字节一致。
+5. 两波长独立时间、记录 ID 和不等长尾部样本完整保留。
+6. 复制视频的 SHA256 与源视频一致；源记录文件前后哈希一致。
+7. 任取一只动物，用现有分析程序导入 (Camera).csv，人工核对视频及信号。
+   对新版本 Inper 的首个批次，建议再用厂商软件导出一份，核对表头/时间/信号。
+
+七、出错与重跑
+
+程序不覆盖、删除或自动续跑已有输出目录。
+预检查失败时通常不创建输出，修正原因后重跑即可。
+输出过程中失败会留下 FAILED.json 及已完成的部分文件；没有最终 PASS 就不是成品。
+磁盘空间耗尽、断电或强制退出可能来不及写 FAILED.json，因此仍以最终 PASS 为准。
+保留失败文件供排查，修复后选择另一个全新输出目录再运行。
+出现 -wal/-journal 非空提示时，先正常关闭采集软件；不要手动删除数据库侧车文件。
+新波长、非 Camera 通道、ROI 命名不符、非有限信号、时间倒序、额外信号表等
+都会停止；不要强行忽略，先让维护者核实数据库格式并扩展程序。
+
+八、命令行与维护（可选）
+
+本机安装 Python 3.10+ 后，可使用无第三方依赖的核心：
+python inper_exporter.py --batch "G:\Raw\Batch_E" --batch "G:\Raw\Batch_R" --output "G:\Output\NewBatch" --scan-only
+python inper_exporter.py --batch "G:\Raw\Batch_E" --batch "G:\Raw\Batch_R" --output "G:\Output\NewBatch"
+
+追加 --link-videos 代表只引用原视频；默认复制。
+EXE 为图形界面，批量命令行使用上述 Python 文件。
+合成测试：python -m unittest discover -s tests -v
+重新打包：先安装 PyInstaller，再在 PowerShell 运行 .\build.ps1。
+所有测试及打包都与实验 project.mat 独立。发布代码不包含实验数据、项目或标注。

@@ -1,0 +1,12 @@
+This Windows executable bundles Python and runtime components using PyInstaller.
+Build environment: Python 3.11.4 (64-bit), PyInstaller 6.22.3, Tcl/Tk 8.6.
+
+Runtime license texts supplied with this package:
+- licenses/Python-LICENSE.txt (PSF and included component notices)
+- licenses/Tk-license.terms (Tcl/Tk distribution terms from installed runtime)
+- licenses/PyInstaller-COPYING.txt (including bootloader distribution exception)
+
+Python, Tcl/Tk and PyInstaller are separate projects. Their inclusion does not imply endorsement.
+No Inper DLL, vendor executable, experimental data, videos or project.mat is distributed in this ZIP.
+The exporter accesses SQLite with Python's standard sqlite3 module and is independent of vendor software.
+Source-code licensing for this new tool has not been selected by the owner; this file does not assign one.

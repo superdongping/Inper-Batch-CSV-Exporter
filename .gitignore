@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+_build/
+tests/artifacts/
+*.exe
+*.zip
+*.db
+*.sqlite*
+*.avi
+*.mp4
+*.csv
+*.mat
+project.json
+events/
+results/
