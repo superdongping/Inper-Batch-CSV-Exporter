@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "distribution": "RELEASE",
+  "gui_ascii_text_verified": true,
+  "version": "1.2",
+  "base_commit": "b253a71cb49235ea6bfd18a83a6ca06b34fbd422",
+  "research_files_unchanged": 100,
+  "real_projects_read_only": 5,
+  "synthetic_exporter_tests": 14,
+  "packaged_exe_without_python_path": "PASS",
+  "matlab_tests": [
+    "run_tests",
+    "test_import_selection",
+    "test_review_delete_save",
+    "test_portability (identity GUI, relocation, independent events, ZIP, isolation)",
+    "test_exporter_contract"
+  ],
+  "limitations": [
+    "No new vendor GUI comparison",
+    "Portable ZIP excludes historical results",
+    "Legacy missing hashes require explicit folder identity confirmation",
+    "Not independently tested on a second computer"
+  ]
+}

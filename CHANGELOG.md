@@ -1,5 +1,12 @@
 # Changelog
 
+## V1.2 - 2026-10-26
+
+- Add dataset.json schema 1 with stable recording IDs, explicit identity hints and relative references.
+- Add metadata-relative detailed CSV path and Windows path-length preflight.
+- Add Create Analyzer project handoff; preserve existing signal conversion.
+
+
 ## V1.1 / 1.1.0 — 2026-10-19
 
 - Use the owner's selected mouse/fiber/signal-display/conversion-folder icon for the Windows executable and application window.

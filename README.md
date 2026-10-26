@@ -1,14 +1,14 @@
-# Inper Batch CSV Exporter V1.1
+# Inper Batch CSV Exporter V1.2
 
 <img src="assets/inper-exporter.png" width="180" alt="Mouse with optical fiber, signal display and conversion folder">
 
-**Application version: V1.1 / 1.1.0.**
+**Application version: V1.2 / 1.2.0.**
 
-[Download the Windows release](https://github.com/superdongping/Inper-Batch-CSV-Exporter/releases/tag/v1.1)
+[Download the Windows release](https://github.com/superdongping/Inper-Batch-CSV-Exporter/releases/tag/v1.2)
 
 A Windows desktop tool for batch export of supported Inper fiber-photometry SQLite recordings to CSV. It runs independently of MATLAB and Fiber Photometry Behavior Analyzer. The packaged EXE includes its Python runtime; a separate Python installation is not required.
 
-V1.1 adds the mouse/fiber/camera application icon, matching window icon, Windows version information and refreshed documentation. **The conversion algorithm is unchanged from V1.0.**
+V1.2 adds a versioned dataset manifest, stable recording IDs, relative detail paths, path-length preflight and an Analyzer handoff. GUI punctuation uses plain ASCII to avoid display corruption. Signal decoding and sample preservation are unchanged.
 
 ## Quick start
 
@@ -35,9 +35,9 @@ Every saved CSV is read back and checked. Detailed float64 values roundtrip to t
 ## Supported format and known limitations
 
 - Validated Inper SQLite Camera schema, both 410/470 nm per ROI, channel names `ROI-1` through `ROI-N`. Unsupported channels, schemas or invalid values fail explicitly.
-- **Windows long paths remain a known limitation in V1.1.** Use a short output root; nested category/animal/recording folders and long filenames may exceed the traditional 260-character path limit when Windows long-path support is disabled. V1.1 does not change system settings or fix this naming behavior. Scan does not yet catch every output-path length failure.
-- With extra category levels such as `batch/sensor/animal/recording`, paths are retained, but the manifest's `animal_folder` field may reflect the top category. The tool does not infer animal/group biology. Check IDs, groups and condition labels when creating an Analyzer project.
-- Metadata `detailed_csv` uses an absolute path for compatibility with the existing Analyzer. If you move output, correct that link before analysis; an older Analyzer may otherwise fall back to primary shared time. A relative detail path and hash are also recorded.
+- Use a short output root. Scan now rejects planned detailed output paths of 260 characters or more before writing; Windows system settings are not changed.
+- For nested sensor/animal/recording folders, dataset.json carries explicit identity hints. Confirm AnimalID, group and condition in Analyzer V1.3. The legacy conversion_manifest.csv animal_folder field can still reflect the top category.
+- Analyzer V1.3 resolves detailed CSV paths relative to the dataset/metadata and refuses a missing expected detail file. Older Analyzers may still rely on absolute metadata paths; upgrade before moving data.
 - No final PASS means incomplete output. Keep failed output for diagnosis, fix the cause and retry to a different new output directory. Do not delete original recordings or database sidecars to bypass an error.
 - No new comparison with a vendor GUI export was performed. The decoder is based on the previously checked local vendor reading rules and historical CSV regression, not a bundled vendor library.
 
@@ -57,9 +57,12 @@ Repeat `--batch` for multiple batches. `--link-videos` references originals inst
 
 ## Version and icon
 
-- **V1.1 / 1.1.0:** new application/window icon, embedded EXE version information and current documentation; export logic unchanged.
+- **V1.2 / 1.2.0:** dataset manifests, relative details, path preflight, Analyzer handoff and corrected GUI text.
+- **V1.1 / 1.1.0:** selected application icon and embedded EXE version information.
 - **V1.0 / 1.0.0:** original standalone GUI/CLI and verified primary/detail export pipeline.
 
 The application uses the owner's selected **Mouse fiber photometry converter** image: a mouse with an optical fiber, signal display and conversion folder. The supplied PNG is retained byte-for-byte; only format conversion/downsampling was used for the multi-resolution Windows ICO. `assets/ICON_SOURCE.json` records provenance and the original PNG hash.
 
 Keep recordings, projects, generated output and test artifacts outside source control. No experimental data or vendor executable/DLL belongs in the repository. See `THIRD_PARTY_NOTICES.txt` and `licenses/` for bundled runtime notices. An owner-selected source-code license has not been assigned.
+
+Current release validation: `LOCAL_VALIDATION.json`. Earlier validation reports are retained as historical evidence.

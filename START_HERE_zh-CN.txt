@@ -1,0 +1,17 @@
+正式版 Exporter V1.2，配合 Analyzer V1.3；已发布至 GitHub。
+
+双击本目录的 Inper Batch CSV Exporter.exe。
+Add batch 添加批次，选择新的短输出目录，Scan 后 Export，等待 PASS。
+新版额外生成 dataset.json。它保存稳定记录编号、相对文件位置和待确认的小鼠/阶段/sensor 信息。
+请保留整个输出目录（包括 _details、metadata 和视频），不要只拷贝主 CSV。
+
+完成后可点 Create Analyzer project：本机有 MATLAB 时启动新版 Analyzer；否则按提示在 MATLAB 手动运行 launch_analyzer。
+Analyzer 的 New project 选择包含 dataset.json 的目录，核对建议的动物、分组、ROI 和行为后确认每份记录身份。
+动物编号和分组需要确认，程序不把目录推断当作实验事实。
+
+日常项目链接共享数据，不重复复制视频。换电脑时在 Analyzer 使用 Portable package，一次生成可解压使用的完整 ZIP。
+旧批次仍可导入 Analyzer，不强制重新导出。
+
+Windows 长路径目前采用写入前预检；若提示过长，请选择更短的新输出目录，例如 G:\InperOut。
+本次未改变信号解码、样本值或双波长时间保留规则。
+LINKED_DATA_WORKFLOW.md 说明完整工作流；此前发布版的验证文件保留作历史参考，当前验证见 LOCAL_VALIDATION.json。

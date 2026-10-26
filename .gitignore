@@ -13,3 +13,6 @@ tests/artifacts/
 project.json
 events/
 results/
+
+# Local validation outputs
+*.log

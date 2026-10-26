@@ -1,5 +1,7 @@
 """Desktop entry point. Worker threads never mutate Tk widgets."""
 import os
+import shutil
+import subprocess
 import sys
 import queue
 import threading
@@ -8,6 +10,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from inper_exporter import VERSION, run_export, scan
+from dataset_manifest import identity
 
 
 class ExporterApp:
@@ -34,14 +37,14 @@ class ExporterApp:
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(7, weight=1)
         frame.rowconfigure(9, weight=1)
-        ttk.Label(frame, text="Inper → CSV", font=("Segoe UI", 17, "bold")).grid(row=0, sticky="w")
-        ttk.Label(frame, text="Read-only sources · Sample-compatible CSV + full detailed CSV · No overwrite").grid(row=1, sticky="w", pady=(0, 8))
-        batch_frame = ttk.LabelFrame(frame, text="1. Input batch folders (each contains animal/session/data.db)", padding=6)
+        ttk.Label(frame, text="Inper to CSV", font=("Segoe UI", 17, "bold")).grid(row=0, sticky="w")
+        ttk.Label(frame, text="Read-only sources | Sample-compatible CSV + full detailed CSV | No overwrite").grid(row=1, sticky="w", pady=(0, 8))
+        batch_frame = ttk.LabelFrame(frame, text="1. Input batch folders (nested sensor / animal / recording folders supported)", padding=6)
         batch_frame.grid(row=2, sticky="ew")
         batch_frame.columnconfigure(0, weight=1)
         self.batch_list = tk.Listbox(batch_frame, height=4, selectmode="extended", exportselection=False)
         self.batch_list.grid(row=0, column=0, rowspan=2, sticky="ew")
-        self.add_button = ttk.Button(batch_frame, text="Add batch…", command=self.add_batch)
+        self.add_button = ttk.Button(batch_frame, text="Add batch...", command=self.add_batch)
         self.add_button.grid(row=0, column=1, padx=6)
         self.remove_button = ttk.Button(batch_frame, text="Remove selected", command=self.remove_batches)
         self.remove_button.grid(row=1, column=1, padx=6)
@@ -50,7 +53,7 @@ class ExporterApp:
         out_frame.columnconfigure(0, weight=1)
         self.output_entry = ttk.Entry(out_frame, textvariable=self.output)
         self.output_entry.grid(row=0, column=0, sticky="ew")
-        self.output_button = ttk.Button(out_frame, text="Choose parent…", command=self.choose_output)
+        self.output_button = ttk.Button(out_frame, text="Choose parent...", command=self.choose_output)
         self.output_button.grid(row=0, column=1, padx=6)
         self.video_check = ttk.Checkbutton(frame, text="Copy original AVI videos and verify SHA256 (recommended; uses additional disk space)", variable=self.copy_videos)
         self.video_check.grid(row=4, sticky="w")
@@ -62,10 +65,12 @@ class ExporterApp:
         self.export_button.pack(side="left", padx=8)
         self.open_button = ttk.Button(buttons, text="Open output", command=self.open_output)
         self.open_button.pack(side="right")
+        self.analyzer_button = ttk.Button(buttons, text="Create Analyzer project", command=self.open_analyzer)
+        self.analyzer_button.pack(side="right", padx=6)
         self.progress = ttk.Progressbar(frame, mode="indeterminate")
         self.progress.grid(row=6, sticky="ew", pady=(0, 5))
         self.tree = ttk.Treeview(frame, columns=("batch", "animal", "session", "target"), show="headings", height=7)
-        for col, label, width in (("batch", "Batch", 220), ("animal", "Animal folder", 120),
+        for col, label, width in (("batch", "Batch", 220), ("animal", "Animal ID hint", 120),
                                   ("session", "Recording", 130), ("target", "Output relative folder", 380)):
             self.tree.heading(col, text=label)
             self.tree.column(col, width=width)
@@ -75,7 +80,7 @@ class ExporterApp:
         self.log.grid(row=9, sticky="nsew")
         ttk.Label(frame, text="Time = 410 nm sample time; no interpolation. Full independent times/tails are in _details.\nDo not convert while acquisition is running. A FAILED.json means the output is incomplete.").grid(row=10, sticky="w", pady=(8, 0))
         self.controls = [self.add_button, self.remove_button, self.output_entry, self.output_button,
-                         self.video_check, self.scan_button, self.export_button, self.open_button, self.batch_list]
+                         self.video_check, self.scan_button, self.export_button, self.open_button, self.analyzer_button, self.batch_list]
         root.after(100, self.poll)
 
     def add_batch(self):
@@ -115,7 +120,7 @@ class ExporterApp:
             return
         batches, output, copy = params
         self.set_busy(True)
-        self.status.set("Exporting and verifying…" if export else "Scanning databases (read-only)…")
+        self.status.set("Exporting and verifying..." if export else "Scanning databases (read-only)...")
 
         def task():
             try:
@@ -154,7 +159,7 @@ class ExporterApp:
                     jobs, skipped, warnings = data
                     self.tree.delete(*self.tree.get_children())
                     for job in jobs:
-                        self.tree.insert("", "end", values=(job.batch.name, job.mouse.name, job.session.name, str(job.target)))
+                        self.tree.insert("", "end", values=(job.batch.name, identity(job.batch, job.session)["animal_id"] or "Needs confirmation", job.session.name, str(job.target)))
                     for text in warnings:
                         self.append_log("WARNING: " + text)
                     self.status.set(f"SCAN PASS: {len(jobs)} recordings, {len(skipped)} empty folders, {len(warnings)} warnings. No output written.")
@@ -176,6 +181,27 @@ class ExporterApp:
         path = Path(self.output.get())
         if self.output.get() and path.is_dir():
             os.startfile(str(path.resolve()))
+
+    def open_analyzer(self):
+        output = Path(self.output.get())
+        if not (output / 'dataset.json').is_file() or (output / 'FAILED.json').exists():
+            messagebox.showerror('Dataset needed', 'Choose a completed output containing dataset.json.')
+            return
+        matlab = shutil.which('matlab')
+        if not matlab:
+            messagebox.showinfo('Open in MATLAB', 'Start the updated Analyzer in MATLAB, click New project and select this dataset: ' + str(output))
+            return
+        code = Path(sys.executable if getattr(sys, 'frozen', False) else __file__).resolve().parent.parent / 'Fiber-Photometry-Behavior-Analyzer'
+        if not (code / 'fiber_photometry_project.m').is_file():
+            chosen = filedialog.askdirectory(title='Select the updated Analyzer program folder')
+            if not chosen:
+                return
+            code = Path(chosen)
+        if not (code / 'fiber_photometry_project.m').is_file():
+            messagebox.showerror('Analyzer not found', 'Select the folder containing fiber_photometry_project.m.')
+            return
+        argument = str(output.resolve()).replace("'", "''")
+        subprocess.Popen([matlab, '-sd', str(code), '-r', "fiber_photometry_project('" + argument + "')"])
 
     def close(self):
         if self.busy:

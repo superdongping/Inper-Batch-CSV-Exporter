@@ -21,7 +21,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
+from dataset_manifest import write_dataset
 EVENT_TABLES = ("Marker", "OutputMarker", "Tag", "Note", "Tracking", "ZoneInfo", "IntervalScale")
 
 
@@ -216,6 +217,9 @@ def scan(batches, output=None, log=lambda text: None):
             prefix = re.sub(r"^(\d{4}-\d{2}-\d{2})\s+", r"\1_", batch.name, count=1)
             mouse_stem = re.sub(r"\s+", "_", mouse.name, count=1)
             stem = safe_name(prefix + "_" + mouse_stem + suffix)
+            if output is not None:
+                longest = Path(output).resolve() / '_details' / target / (stem + '_detailed.csv')
+                require(len(str(longest)) < 260, f"Output path would exceed Windows safe length ({len(str(longest))} characters). Choose a shorter output root, e.g. G:/InperOut. No output was created.")
             log(f"Checking {batch.name} / {mouse.name} / {session.name}")
             record = load_record(db)
             n410, n470 = (len(record["data"][w]) for w in (410, 470))
@@ -339,6 +343,7 @@ def export_job(job, root, copy_videos, log):
         source_schema=record["schema"], source_tables=record["tables"], source_file_sha256=before,
         primary_header=ph, detailed_header=dh, event_table_counts=events, copied_notes=notes,
         csv_columns=ph, detailed_csv_columns=dh, detailed_csv=str(detailed),
+        detailed_csv_relative_to_metadata=__import__("os").path.relpath(detailed, target),
         detailed_csv_relative_to_output=str(detailed.relative_to(root)), detailed_csv_sha256=digest(detailed),
         sample_counts={"410": len(record["data"][410]), "470": len(record["data"][470])},
         time_rule="Primary uses 410 CameraTime//100 ticks; detailed preserves independent nanosecond times",
@@ -367,6 +372,7 @@ def run_export(batches, output, copy_videos=True, log=print):
     try:
         for job in jobs:
             records.append(export_job(job, output, copy_videos, log))
+        write_dataset(output, records, jobs, VERSION)
         write_csv(output / "conversion_manifest.csv", list(records[0]), (r.values() for r in records))
         write_csv(output / "skipped_empty_folders.csv", ["batch", "source_folder", "reason"],
                   (r.values() for r in skipped))
