@@ -9,7 +9,8 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-from inper_exporter import VERSION, run_export, scan
+from inper_exporter import VERSION, run_export, scan, validate_output
+from path_helpers import display_path, suggested_output
 from dataset_manifest import identity
 
 
@@ -55,6 +56,9 @@ class ExporterApp:
         self.output_entry.grid(row=0, column=0, sticky="ew")
         self.output_button = ttk.Button(out_frame, text="Choose parent...", command=self.choose_output)
         self.output_button.grid(row=0, column=1, padx=6)
+        self.suggest_button = ttk.Button(out_frame, text="Suggest safe folder", command=self.suggest_output)
+        self.suggest_button.grid(row=1, column=1, padx=6, pady=4)
+        ttk.Label(out_frame, text="Output must be outside every input batch. J: and its UNC address are the same location.").grid(row=1, column=0, sticky="w")
         self.video_check = ttk.Checkbutton(frame, text="Copy original AVI videos and verify SHA256 (recommended; uses additional disk space)", variable=self.copy_videos)
         self.video_check.grid(row=4, sticky="w")
         buttons = ttk.Frame(frame)
@@ -79,15 +83,17 @@ class ExporterApp:
         self.log = tk.Text(frame, height=7, wrap="word", state="disabled", font=("Consolas", 9))
         self.log.grid(row=9, sticky="nsew")
         ttk.Label(frame, text="Time = 410 nm sample time; no interpolation. Full independent times/tails are in _details.\nDo not convert while acquisition is running. A FAILED.json means the output is incomplete.").grid(row=10, sticky="w", pady=(8, 0))
-        self.controls = [self.add_button, self.remove_button, self.output_entry, self.output_button,
+        self.controls = [self.add_button, self.remove_button, self.output_entry, self.output_button, self.suggest_button,
                          self.video_check, self.scan_button, self.export_button, self.open_button, self.analyzer_button, self.batch_list]
         root.after(100, self.poll)
 
     def add_batch(self):
         folder = filedialog.askdirectory(title="Choose one batch folder (containing animal subfolders)")
-        if folder and str(Path(folder).resolve()) not in self.batches:
-            self.batches.append(str(Path(folder).resolve()))
+        if folder and Path(folder).resolve() not in [Path(b).resolve() for b in self.batches]:
+            self.batches.append(display_path(folder))
             self.batch_list.insert("end", self.batches[-1])
+            if not self.output.get():
+                self.suggest_output()
 
     def remove_batches(self):
         for index in reversed(self.batch_list.curselection()):
@@ -97,7 +103,20 @@ class ExporterApp:
     def choose_output(self):
         parent = filedialog.askdirectory(title="Choose output PARENT folder")
         if parent:
-            self.output.set(str(Path(parent) / "Inper_Export_NewBatch"))
+            try:
+                candidate = suggested_output(self.batches, display_path(parent))
+            except ValueError as exc:
+                messagebox.showerror("Choose output location", str(exc))
+                return
+            if any(Path(parent).resolve().is_relative_to(Path(b).resolve()) for b in self.batches):
+                messagebox.showinfo("Output moved outside input", "The selected parent is inside an input batch. Suggested output:\n" + candidate)
+            self.output.set(candidate)
+
+    def suggest_output(self):
+        try:
+            self.output.set(suggested_output(self.batches))
+        except ValueError as exc:
+            messagebox.showerror("Choose output location", str(exc))
 
     def set_busy(self, value):
         self.busy = value
@@ -111,6 +130,12 @@ class ExporterApp:
     def parameters(self):
         if not self.batches or not self.output.get().strip():
             messagebox.showerror("Missing input", "Add at least one batch and enter a new output folder.")
+            return None
+        try:
+            validate_output(self.batches, self.output.get().strip())
+        except Exception as exc:
+            self.status.set("FAILED: " + str(exc))
+            messagebox.showerror("Choose a separate NEW output folder", str(exc))
             return None
         return list(self.batches), self.output.get().strip(), self.copy_videos.get()
 

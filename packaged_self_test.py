@@ -19,7 +19,7 @@ def start_self_test(app, folder):
         for light, wave in enumerate((410, 470)):
             for roi in range(2):
                 con.execute("INSERT INTO ChannelConfig VALUES(?,?,?,?,?,?,?)",
-                            (light*2+roi+1, roi, light, f"ROI-{roi+1}", f"{wave} nm", "Camera", 0))
+                            (light*2+roi+1, roi, light, ['ROI-1-L', 'Right DG'][roi], f"{wave} nm", "Camera", 0))
             con.execute(f"CREATE TABLE AllChannelRecord{light}(Id INTEGER PRIMARY KEY,Value TEXT,Type INTEGER,CameraTime INTEGER,CreateTime TEXT)")
             for i in range(3):
                 value = " ".join(f"{roi}," + base64.b64encode(struct.pack("<d", float(i+roi+light))).decode() for roi in range(2))

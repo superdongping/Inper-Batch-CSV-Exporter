@@ -1,0 +1,28 @@
+正式版 1.2.1（基于前版 GitHub main cb9deeb）
+
+1. 支持自定义 ROI 名称
+支持 ROI-1-L、ROI1-L、脑区名、中文、空格等非空名称，也支持不同 ChannelId 使用相同名称。
+始终按数据库 ChannelId 解码、配对 410/470，不根据名称猜测信号归属。
+为兼容现有 Analyzer：标准且唯一的 ROI-N 名称保持不变；存在自定义或重复名称时，按 ChannelId 升序统一映射为 ROI-1、ROI-2……。
+原名完整保留在每条记录的 metadata.json -> roi_mapping（channel_id/source_name/csv_name）和原始 ChannelConfig 中，扫描日志显示对应关系。
+两个波长同一 ChannelId 的名称不一致、缺失通道等结构问题仍会明确报错，不自动猜测。
+
+2. J: 和 UNC 地址
+J: 是网络共享的盘符别名。本机 J: 对应 \\ad.unc.edu\med\pharm\Groups。
+新版界面优先显示本机可用映射盘符；后台校验仍使用真实规范路径。
+metadata 中可能保留 UNC 源路径，这是正常的，同一个位置不会因换成盘符而绕过重叠保护。
+
+3. 输出目录
+输入应选择实际批次，而不是包含所有原始数据和输出的整个实验大目录。
+输出必须是尚不存在的新文件夹，而且不能是任一输入的子目录、父目录或同一目录。
+添加第一个批次后自动建议位置。Suggest safe folder 可重新生成；Choose parent 可指定输出所在位置。
+如果选择的父目录在输入内部，会提示并建议移动到输入之外。扫描开始前先检查，不必等读取数据库后才报错。
+已有输出/失败目录都不覆盖，每次使用新名称。
+
+例如输入：J:\Song_Lab\Ping\00 Data\2026\2026-031 CCK Meta Sensors
+可用输出：G:\InperOut\KA_20261031_run1（新文件夹）
+不可用输出：上面输入目录\OutputKA1031\Inper_Export_NewBatch（仍在输入内部）
+也可在 J: 上选与输入并列的专用输出目录，不要求必须换盘。
+路径过长检查仍保留；推荐简短输出根目录。只有 validation_summary.json 的 status=PASS 才视为完成。
+
+未更改信号解码、双时间保留、尾样本处理或既有研究文件。本版本未执行真实数据重新导出。

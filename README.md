@@ -1,21 +1,21 @@
-# Inper Batch CSV Exporter V1.2
+# Inper Batch CSV Exporter V1.2.1
 
 <img src="assets/inper-exporter.png" width="180" alt="Mouse with optical fiber, signal display and conversion folder">
 
-**Application version: V1.2 / 1.2.0.**
+**Application version: V1.2.1 / 1.2.1.**
 
-[Download the Windows release](https://github.com/superdongping/Inper-Batch-CSV-Exporter/releases/tag/v1.2)
+[Download the Windows release](https://github.com/superdongping/Inper-Batch-CSV-Exporter/releases/tag/v1.2.1)
 
 A Windows desktop tool for batch export of supported Inper fiber-photometry SQLite recordings to CSV. It runs independently of MATLAB and Fiber Photometry Behavior Analyzer. The packaged EXE includes its Python runtime; a separate Python installation is not required.
 
-V1.2 adds a versioned dataset manifest, stable recording IDs, relative detail paths, path-length preflight and an Analyzer handoff. GUI punctuation uses plain ASCII to avoid display corruption. Signal decoding and sample preservation are unchanged.
+V1.2.1 accepts custom ROI labels, displays available mapped-drive aliases and suggests safe new output folders. It retains V1.2 dataset manifests, stable recording IDs, relative detail paths, path-length preflight and Analyzer handoff. Signal decoding and sample preservation are unchanged. See [1.2.1 update instructions](UPDATE_1.2.1_zh-CN.txt).
 
 ## Quick start
 
 1. Finish acquisition and close software writing to the raw batch.
 2. Extract the application folder and double-click **Inper Batch CSV Exporter.exe** (or `START.bat`).
 3. Add one or more input batch folders. Each valid recording folder must contain `data.db` and exactly one AVI.
-4. Enter a **new, short output path**, such as `G:\InperOut\NewBatch`. It must not already exist or overlap an input folder.
+4. Click **Suggest safe folder**, or enter a **new, short output path**, such as `G:\InperOut\NewBatch`. It must not already exist or be inside, above, or equal to an input folder. Drive letters and their UNC aliases refer to the same location; overlap is checked against the actual paths.
 5. Keep **Copy original AVI videos** checked for independent verified copies; uncheck only if you intentionally want references to the original videos.
 6. Click **Scan / preview**, check the records, then **Export**. Use the output only when the final `validation_summary.json` reports `status: PASS`.
 
@@ -34,7 +34,8 @@ Every saved CSV is read back and checked. Detailed float64 values roundtrip to t
 
 ## Supported format and known limitations
 
-- Validated Inper SQLite Camera schema, both 410/470 nm per ROI, channel names `ROI-1` through `ROI-N`. Unsupported channels, schemas or invalid values fail explicitly.
+- Validated Inper SQLite Camera schema, both 410/470 nm per ROI. Nonempty custom ROI labels are supported, including repeated labels on distinct ChannelIds. Signal matching uses numeric ChannelId; inconsistent names across wavelengths still fail explicitly.
+- Unique standard `ROI-N` labels remain unchanged. When custom or duplicate labels occur, all ROI columns in that recording use `ROI-1`, `ROI-2`, etc. in ascending ChannelId order for Analyzer compatibility. Metadata `roi_mapping` preserves `channel_id`, `source_name` and `csv_name`; scan logs show the mapping. Unsupported schemas or invalid values fail explicitly.
 - Use a short output root. Scan now rejects planned detailed output paths of 260 characters or more before writing; Windows system settings are not changed.
 - For nested sensor/animal/recording folders, dataset.json carries explicit identity hints. Confirm AnimalID, group and condition in Analyzer V1.3. The legacy conversion_manifest.csv animal_folder field can still reflect the top category.
 - Analyzer V1.3 resolves detailed CSV paths relative to the dataset/metadata and refuses a missing expected detail file. Older Analyzers may still rely on absolute metadata paths; upgrade before moving data.
@@ -57,6 +58,7 @@ Repeat `--batch` for multiple batches. `--link-videos` references originals inst
 
 ## Version and icon
 
+- **V1.2.1 / 1.2.1:** custom ROI mapping, mapped-drive display, output suggestions and early overlap validation.
 - **V1.2 / 1.2.0:** dataset manifests, relative details, path preflight, Analyzer handoff and corrected GUI text.
 - **V1.1 / 1.1.0:** selected application icon and embedded EXE version information.
 - **V1.0 / 1.0.0:** original standalone GUI/CLI and verified primary/detail export pipeline.

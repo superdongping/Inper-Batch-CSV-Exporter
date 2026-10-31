@@ -21,8 +21,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 from dataset_manifest import write_dataset
+from path_helpers import overlap, suggested_output
 EVENT_TABLES = ("Marker", "OutputMarker", "Tag", "Note", "Tracking", "ZoneInfo", "IntervalScale")
 
 
@@ -127,11 +128,16 @@ def load_record(db):
             require((wave, roi) not in mappings, "Duplicate wavelength/ROI configuration")
             mappings[wave, roi] = light
             name = row["ChannelName"]
-            require(bool(re.fullmatch(r"ROI-[1-9][0-9]*", name)), f"Unsupported ROI name: {name}")
+            require(isinstance(name, str) and bool(name.strip()), f"Empty ROI name for ChannelId {roi}")
             require(roi not in roi_names or roi_names[roi] == name, "ROI name differs by wavelength")
             roi_names[roi] = name
         rois = sorted(roi_names)
-        require(len(set(roi_names.values())) == len(rois), "Duplicate ROI names")
+        source_roi_names = dict(roi_names)
+        # Analyzer uses canonical ROI-N CSV columns. Keep standard names unchanged;
+        # custom/duplicate labels map by numeric ChannelId, never by text guessing.
+        if (not all(re.fullmatch(r"ROI-[1-9][0-9]*", n) for n in roi_names.values())
+                or len(set(roi_names.values())) != len(rois)):
+            roi_names = {r: f"ROI-{i+1}" for i, r in enumerate(rois)}
         light_ids = {}
         for wave in (410, 470):
             require(all((wave, roi) in mappings for roi in rois), "Each ROI must have both 410 and 470")
@@ -158,7 +164,8 @@ def load_record(db):
         tables = {name: [dict(r) for r in con.execute(f"SELECT * FROM {quote(name)}")]
                   for name in schema if name not in expected and name != "sqlite_sequence"}
     require(digest(db) == before, f"Source DB changed while reading: {db}")
-    return dict(rois=rois, roi_names=roi_names, data=data, tables=tables, schema=schema, db_sha256=before)
+    return dict(rois=rois, roi_names=roi_names, source_roi_names=source_roi_names,
+                data=data, tables=tables, schema=schema, db_sha256=before)
 
 
 @dataclass
@@ -180,7 +187,19 @@ def safe_name(text):
     return text
 
 
+def validate_output(batches, output):
+    out = Path(output).resolve()
+    for batch in batches:
+        if overlap(out, batch):
+            raise ExportError(f"Output and input must not overlap.\nInput: {batch}\nOutput: {output}\n"
+                              "The same folder, its children and its parents are not allowed (drive letters and UNC may refer to the same location).\n"
+                              f"Use Suggest safe folder, or choose a separate folder, for example: {suggested_output(batches)}")
+    require(not out.exists(), "Output folder already exists. Select a NEW folder; overwrite/resume is disabled. Use Suggest safe folder.")
+
+
 def scan(batches, output=None, log=lambda text: None):
+    if output is not None:
+        validate_output(batches, output)
     batches = [Path(x).resolve() for x in batches]
     require(bool(batches), "Select at least one batch folder")
     require(len({p.name.casefold() for p in batches}) == len(batches), "Batch folder names must be unique")
@@ -222,6 +241,9 @@ def scan(batches, output=None, log=lambda text: None):
                 require(len(str(longest)) < 260, f"Output path would exceed Windows safe length ({len(str(longest))} characters). Choose a shorter output root, e.g. G:/InperOut. No output was created.")
             log(f"Checking {batch.name} / {mouse.name} / {session.name}")
             record = load_record(db)
+            if record['source_roi_names'] != record['roi_names']:
+                log('ROI mapping (ChannelId: original -> CSV): ' + '; '.join(
+                    f"{r}: {record['source_roi_names'][r]!r} -> {record['roi_names'][r]}" for r in record['rois']))
             n410, n470 = (len(record["data"][w]) for w in (410, 470))
             if n410 != n470:
                 warnings.append(f"{db}: 410={n410}, 470={n470}; detailed CSV preserves all samples")
@@ -342,6 +364,7 @@ def export_job(job, root, copy_videos, log):
         method="Read-only SQLite; Base64 little-endian IEEE754 float64; no vendor GUI comparison",
         source_schema=record["schema"], source_tables=record["tables"], source_file_sha256=before,
         primary_header=ph, detailed_header=dh, event_table_counts=events, copied_notes=notes,
+        roi_mapping=[dict(channel_id=r, source_name=record['source_roi_names'][r], csv_name=record['roi_names'][r]) for r in record['rois']],
         csv_columns=ph, detailed_csv_columns=dh, detailed_csv=str(detailed),
         detailed_csv_relative_to_metadata=__import__("os").path.relpath(detailed, target),
         detailed_csv_relative_to_output=str(detailed.relative_to(root)), detailed_csv_sha256=digest(detailed),

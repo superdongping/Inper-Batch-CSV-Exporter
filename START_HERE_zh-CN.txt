@@ -1,4 +1,5 @@
-正式版 Exporter V1.2，配合 Analyzer V1.3；已发布至 GitHub。
+正式版 Exporter V1.2.1，配合 Analyzer V1.3。
+本次新增自定义 ROI 名称兼容、映射盘符显示和 Suggest safe folder；详见 UPDATE_1.2.1_zh-CN.txt。
 
 双击本目录的 Inper Batch CSV Exporter.exe。
 Add batch 添加批次，选择新的短输出目录，Scan 后 Export，等待 PASS。

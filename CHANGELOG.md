@@ -1,3 +1,8 @@
+## 1.2.1
+- Accept custom ROI labels using ChannelId, preserving original names in roi_mapping; keep Analyzer-compatible columns.
+- Show mapped drive aliases and validate canonical overlap before scan.
+- Suggest unique output directories outside all inputs.
+
 # Changelog
 
 ## V1.2 - 2026-10-26
